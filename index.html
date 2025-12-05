@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Brassimulator</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="app">
+        <h1>Brassimulator</h1>
+        <div id="pitch-line"></div>
+        <div id="content">
+            <div id="valves"></div>
+        </div>
+        <div id="horn-image-container" onfocus="this.blur()" tabindex="-1">
+            <img class="horn-image" src="./assets/horn_000.png">
+        </div>
+        <div id="note-image-container" onfocus="this.blur()" tabindex="-1">
+            <img class="note-image" src="./assets/notes/C4.png">
+        </div>
+    </div>
+    <script type="module" src="brassimulator.js"></script>
+</body>
+</html>
