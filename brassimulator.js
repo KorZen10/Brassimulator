@@ -23,6 +23,15 @@ window.addEventListener('keydown', keydown);
 window.addEventListener('keyup', keyup);
 window.addEventListener('mousedown', mousedown);
 window.addEventListener('mouseup', mouseup);
+window.addEventListener('blur', function() {
+    // Stop sound when window loses focus
+    if (mouseHeld || rightMouseHeld) {
+        osc.stop();
+        mouseHeld = false;
+        rightMouseHeld = false;
+        cancelFilterDrop();
+    }
+});
 
 document.addEventListener('contextmenu', function(event) {
     event.preventDefault();
@@ -296,7 +305,7 @@ function draw() {
     // console.log('mouseY', mouseY);
     
     if (mouseY > heightPartials[currPartial] || mouseY < heightPartials[currPartial + 1]) {
-        let newPartial = -1;
+        let newPartial = numPartials - 1;
         for (let i = 0; i < numPartials; i++) {
             if (mouseY <= heightPartials[i] && mouseY >= heightPartials[i + 1]) {
                 newPartial = i;
@@ -420,38 +429,6 @@ function interpolateFromBasePartials(x) {
     return y0 + (y1 - y0) * t;
 }
 
-function keydown(event) {
-    document.getElementById('valve-' + event.key)?.style.setProperty('background-color', 'black');
-    if (event.key === keys.keys[0] && !keysPressed[0]) {
-        keysPressed[0] = true;
-    }
-    else if (event.key === keys.keys[1] && !keysPressed[1]) {
-        keysPressed[1] = true;
-    }
-    else if (event.key === keys.keys[2] && !keysPressed[2]) {
-        keysPressed[2] = true;
-    }
-
-    changeIntervalFingerings();
-    loadHornImg();
-}
-
-function keyup(event) {
-    document.getElementById('valve-' + event.key)?.style.setProperty('background-color', 'white');
-    if (event.key === keys.keys[0] && keysPressed[0]) {
-        keysPressed[0] = false;
-    }
-    else if (event.key === keys.keys[1] && keysPressed[1]) {
-        keysPressed[1] = false;
-    }
-    else if (event.key === keys.keys[2] && keysPressed[2]) {
-        keysPressed[2] = false;
-    }
-
-    changeIntervalFingerings();
-    loadHornImg();
-}
-
 let mouseHeld = false;
 let rightMouseHeld = false;
 let filterDropInterval = null;
@@ -524,6 +501,60 @@ function mouseup(event) {
     }
 }
 
+function keydown(event) {
+    // Prevent default behavior for Space and Alt keys
+    if (event.key === ' ' || event.key === 'Alt') {
+        event.preventDefault();
+    }
+    
+    document.getElementById('valve-' + event.key)?.style.setProperty('background-color', 'black');
+    if (event.key === keys.keys[0] && !keysPressed[0]) {
+        keysPressed[0] = true;
+    }
+    else if (event.key === keys.keys[1] && !keysPressed[1]) {
+        keysPressed[1] = true;
+    }
+    else if (event.key === keys.keys[2] && !keysPressed[2]) {
+        keysPressed[2] = true;
+    }
+    else if (event.key === ' ') {
+        mousedown({button: 0});
+    }
+    else if (event.key === 'Alt') {
+        mousedown({button: 2});
+    }
+
+    changeIntervalFingerings();
+    loadHornImg();
+}
+
+function keyup(event) {
+    // Prevent default behavior for Space and Alt keys
+    if (event.key === ' ' || event.key === 'Alt') {
+        event.preventDefault();
+    }
+    
+    document.getElementById('valve-' + event.key)?.style.setProperty('background-color', 'white');
+    if (event.key === keys.keys[0] && keysPressed[0]) {
+        keysPressed[0] = false;
+    }
+    else if (event.key === keys.keys[1] && keysPressed[1]) {
+        keysPressed[1] = false;
+    }
+    else if (event.key === keys.keys[2] && keysPressed[2]) {
+        keysPressed[2] = false;
+    }
+    else if (event.key === ' ') {
+        mouseup({button: 0});
+    }
+    else if (event.key === 'Alt') {
+        mouseup({button: 2});
+    }
+
+    changeIntervalFingerings();
+    loadHornImg();
+}
+
 function switchHands() {
     if (keys.leftHand) {
         keys.leftHand = false;
@@ -535,9 +566,18 @@ function switchHands() {
 
     // Update valve labels and IDs
     let valveDivs = document.querySelectorAll('.valve');
-    for (let i = 0; i < valveDivs.length; i++) {
-        valveDivs[i].textContent = keys.keys[i];
-        valveDivs[i].id = 'valve-' + keys.keys[i];
+    if (!keys.leftHand) {
+        for (let i = 0; i < valveDivs.length; i++) {
+            valveDivs[i].textContent = keys.keys[i];
+            valveDivs[i].id = 'valve-' + keys.keys[i];
+        }
+    }
+    else {
+        for (let i = 0; i < valveDivs.length; i++) {
+            const keyIndex = valveDivs.length - 1 - i;
+            valveDivs[i].textContent = keys.keys[keyIndex];
+            valveDivs[i].id = 'valve-' + keys.keys[keyIndex];
+        }
     }
     
     // Flip horn image horizontally based on hand

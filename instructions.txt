@@ -1,0 +1,32 @@
+(Hi! Yes, I know this looks ugly af but bear with me I'm working on it lol.)
+
+Welcome to the Brassimulator!
+
+Have you ever wanted to play your instrument but then realized you didn't have it? Oh no! Or did you learn you wanted to play a synthesizer, but you (actually this is me) can't actually play any other instruments?? Well, you're in luck; the Brassimulator is here to save the day! Now, you can simulate playing your instrument any time you want! (Unless you're on a device this doesn't work on, that's WIP)
+
+ABOUT:
+-This tool is helpful whenever you feel like playing/practicing songs on your instrment when you don't have it, but it could be particularly useful for learning new music and how it sounds.
+-The sound is just a synthesizer that I put basic effects on to make it sound more brassy. I chose that because it was really easy to program; I might make it more realistic one day, but that'll take time to add.
+-The pitches that are played are computed mathematically, so not every pitch will be perfectly centered in your key (depends on the harmonic series). Keep that in mind!
+
+INSTRUMENTS:
+-Currently, only Mellophone (AKA the best instrument) is supported. Eventually, you'll get the opportunity to play others too.
+
+HOW TO PLAY:
+-What you'd normally play with your mouth, you now play with your mouse! Click or press space to play a note.
+-The pitch of the note depends on the vertical position of your cursor. The background contains several different-colored regions; each of these represent a partial! Move your cursor up or down to change the partial you're currently playing.
+-To change the fingering, press the keys J, K, and L on the keyboard (like real valves!). This will shift the regions of each partial down a certain amount, just like a regular horn would. This will make transitioning between fingerings feel a lot more realistic.
+-When you play a note, the note under the instrument will update to show what you're currently playing!
+-Moving the cursor horizontally will adjust the dynamics! Left = quieter, right = louder.
+-Right-click or press ALT/Option to play an accented note!
+
+EXTRA FEATURES (will be SETTINGS once that panel is added):
+-Press the "Switch Hands" button to make the valves more natural to press with your left hand if you so desire. Keys will be S, D, and F (F is 1st valve).
+-The slider without a name will change the ratio between how large the regions for each partial are relative to each other. See what feels natural to you. 
+
+
+FEATURES IN THE PIPELINE:
+-Visual reference of where exact notes are so it's easier to know where to put the mouse
+-Settings
+-Valve slide functionality
+-More instruments!!!
