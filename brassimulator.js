@@ -1,9 +1,12 @@
 import * as Tone from "https://cdn.skypack.dev/tone";
 let osc;
-let oscRoot = 86;
+let oscRoot = 87.3;
 let mouseX;
 let mouseY;
-let keys = ['j', 'k', 'l'];
+let prevMouseX = 0;
+let keysRight = ['j', 'k', 'l'];
+let keysLeft = ['f', 'd', 's'];
+let keys = {leftHand: false, keys: keysRight};
 let keysPressed = [false, false, false];
 let valvePitchDown = [1.12246, 1.05946, 1.18921]; // major second, minor second, minor third
 let numPartials = 8;
@@ -12,22 +15,47 @@ let heightPartials = [];
 let basePartials = [];
 let heightPartialNoteIdxs = [6, 13, 20, 25, 29, 32, 35, 37];
 let currPartial = 0;
+let ratio = 1.3;
+let noteBoxRatio = 1; // Separate ratio for note box spacing
+let currFrequency = 500;
 
 window.addEventListener('keydown', keydown);
 window.addEventListener('keyup', keyup);
 window.addEventListener('mousedown', mousedown);
 window.addEventListener('mouseup', mouseup);
 
+document.addEventListener('contextmenu', function(event) {
+    event.preventDefault();
+});
+
 document.addEventListener('mousemove', function(event) {
     mouseX = event.clientX; // X-coordinate relative to the viewport
     mouseY = event.clientY; // Y-coordinate relative to the viewport
 
+    if (mouseX !== prevMouseX) {
+        updateVolume();
+        prevMouseX = mouseX;
+    }
+
     // console.log(`Mouse position: X = ${mouseX}, Y = ${mouseY}`);
 });
 
+function updateVolume() {
+    if (isFilterAttackActive()) return;
+    // Map mouseX to volume range
+    const normalized = mouseX / window.innerWidth; // 0 at left, 1 at right
+    
+    // Volume range: -20 dB at left edge, 0 dB at right edge
+    const volumeDb = -20 + (20 * normalized);
+    window.volume.volume.value = volumeDb;
+
+    currFrequency = 300 + (400 * normalized);
+    window.filter.frequency.value = currFrequency;
+}
+
 
 window.onload = function() {
-    for (let key of keys) {
+    for (let key of keys.keys) {
         let div = document.createElement('div');
         div.className = 'valve';
         div.id = 'valve-' + key;
@@ -37,35 +65,59 @@ window.onload = function() {
         document.getElementById('valves').appendChild(div);
     }
 
-    osc = new Tone.Oscillator().toDestination();
-    osc.frequency.value = oscRoot;
+    // Create a brassy sound with sawtooth wave, low-pass filter, and reverb
+    const reverb = new Tone.Reverb({
+        decay: 0.5,
+        wet: 0.6
+    }).toDestination();
+    window.filter = new Tone.Filter(currFrequency, "lowpass").connect(reverb);
+    window.volume = new Tone.Volume(0).connect(window.filter);
+    osc = new Tone.Oscillator({
+        type: "sawtooth",
+        frequency: oscRoot
+    }).connect(window.volume);
 
-    // partialInterval = window.innerHeight / numPartials;
-    // for (let i = numPartials; i > 0; i--) {
-    //     heightPartials.push(i * partialInterval);
-    // }
+    // Initialize heightPartials based on ratio
+    updateHeightPartials();
 
-    let ratio = 1.3;
-
-    const firstInterval = window.innerHeight * (1 - ratio) / (1 - Math.pow(ratio, numPartials));
-
-    for (let i = 0; i < numPartials; i++) {
-        heightPartials.push(firstInterval * Math.pow(ratio, i) + (heightPartials[i - 1] || 0));
-    }
-    heightPartials.reverse();
-
-    heightPartials.push(0);
-    heightPartials.push(-100);
-
-    basePartials = [...heightPartials];
+    // Add event listener for ratio slider
+    document.getElementById('ratio-slider').addEventListener('input', function(event) {
+        ratio = parseFloat(event.target.value);
+        noteBoxRatio = ratio; // Keep note box ratio in sync for now
+        updateHeightPartials();
+        createIntervalDivs();
+        // createNoteBoxes();
+    });
 
     console.log('heightPartials:', heightPartials);
     console.log('heightPartials[currPartial]:', heightPartials[currPartial]);
     console.log('heightPartials[currPartial + 1]:', heightPartials[currPartial + 1]);
 
     createIntervalDivs();
+    // createNoteBoxes();
     
     rAF60fps();
+}
+
+function updateHeightPartials() {
+    heightPartials = [];
+    
+    if (ratio === 1) {
+        partialInterval = window.innerHeight / numPartials;
+        for (let i = numPartials; i > 0; i--) {
+            heightPartials.push(i * partialInterval);
+        }
+    } else {
+        const firstInterval = window.innerHeight * (1 - ratio) / (1 - Math.pow(ratio, numPartials));
+        
+        for (let i = 0; i < numPartials; i++) {
+            heightPartials.push(firstInterval * Math.pow(ratio, i) + (heightPartials[i - 1] || 0));
+        }
+        heightPartials.reverse();
+        heightPartials.push(-1000);
+    }
+
+    basePartials = [...heightPartials];
 }
 
 function createIntervalDivs() {
@@ -109,6 +161,113 @@ function createIntervalDivs() {
     }
 }
 
+function createNoteBoxes() {
+    const container = document.body;
+    
+    // Clear old note boxes
+    document.querySelectorAll('.note-box').forEach(x => x.remove());
+    
+    // Piano key colors: white keys are white, black keys are black
+    const pianoKeyColors = [
+        'rgba(255, 255, 255, 0.8)', // C - white
+        'rgba(0, 0, 0, 0.8)',        // C# - black
+        'rgba(255, 255, 255, 0.8)', // D - white
+        'rgba(0, 0, 0, 0.8)',        // D# - black
+        'rgba(255, 255, 255, 0.8)', // E - white
+        'rgba(255, 255, 255, 0.8)', // F - white
+        'rgba(0, 0, 0, 0.8)',        // F# - black
+        'rgba(255, 255, 255, 0.8)', // G - white
+        'rgba(0, 0, 0, 0.8)',        // G# - black
+        'rgba(255, 255, 255, 0.8)', // A - white
+        'rgba(0, 0, 0, 0.8)',        // A# - black
+        'rgba(255, 255, 255, 0.8)'  // B - white
+    ];
+    
+    const noteNames = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+    
+    // Define bounds: from bottom of highest partial to bottom of 2nd partial
+    // basePartials[0] has LARGEST Y (bottom of 1st partial), basePartials[1] has bottom of 2nd partial
+    // basePartials[numPartials-1] has SMALLEST Y (top)
+    // basePartials[numPartials] is -1000 (off-screen marker), so use numPartials-1
+    const topBound = basePartials[numPartials - 1]; // Top bound (smallest Y value)
+    const bottomBound = basePartials[1]; // Bottom of 2nd partial
+    const totalHeight = bottomBound - topBound; // Should be positive
+    
+    // 2.5 octaves = 30 semitones (from F# to B)
+    // F# = 6, G = 7, ..., B = 11, C = 0, ..., B = 11 (30 total semitones)
+    const numSemitones = 30;
+    
+    // Calculate note positions using geometric series
+    const notePositions = [];
+    
+    if (noteBoxRatio === 1) {
+        // Uniform spacing
+        const interval = totalHeight / numSemitones;
+        for (let i = 0; i <= numSemitones; i++) {
+            notePositions.push(topBound + i * interval);
+        }
+    } else {
+        // Geometric series spacing
+        const firstInterval = totalHeight * (1 - noteBoxRatio) / (1 - Math.pow(noteBoxRatio, numSemitones));
+        
+        notePositions.push(topBound);
+        for (let i = 0; i < numSemitones; i++) {
+            const size = firstInterval * Math.pow(noteBoxRatio, i);
+            notePositions.push(notePositions[notePositions.length - 1] + size);
+        }
+    }
+    
+    // Create boxes for each semitone (F# to B spanning 2.5 octaves)
+    // Starting from B at the top (highest pitch), descending to F# at bottom (lowest pitch)
+    for (let i = 0; i < numSemitones; i++) {
+        const topY = notePositions[i];
+        const bottomY = notePositions[i + 1];
+        const height = bottomY - topY;
+        
+        // Calculate which note this is - start from B (11) and go down to F# (6)
+        // B, A#, A, G#, G, F#, E, D#, D, C#, C, B, A#, ... (30 total)
+        const noteIdx = (11 - i + 12 * 3) % 12;
+        
+        const div = document.createElement('div');
+        div.className = 'note-box';
+        div.style.position = 'fixed';
+        div.style.right = '10px';
+        div.style.width = '60px';
+        div.style.top = topY + 'px';
+        div.style.height = height + 'px';
+        div.style.border = '1px solid rgba(100, 100, 100, 0.5)';
+        div.style.backgroundColor = pianoKeyColors[noteIdx];
+        div.style.zIndex = '10';
+        div.style.pointerEvents = 'none';
+        div.style.fontSize = '12px';
+        div.style.display = 'flex';
+        div.style.alignItems = 'center';
+        div.style.justifyContent = 'center';
+        div.style.fontWeight = 'bold';
+        
+        div.textContent = noteNames[noteIdx];
+        div.style.color = (noteIdx === 1 || noteIdx === 3 || noteIdx === 6 || noteIdx === 8 || noteIdx === 10) ? 'white' : 'black';
+        
+        container.appendChild(div);
+    }
+}
+
+function interpolateNotePosition(partialIndex) {
+    // Similar to interpolateFromBasePartials but for continuous note positions
+    const i0 = Math.floor(partialIndex);
+    const i1 = Math.ceil(partialIndex);
+    
+    if (i0 < 0 || i0 >= basePartials.length - 1) return -1000;
+    
+    if (i0 === i1) return basePartials[i0];
+    
+    const y0 = basePartials[i0];
+    const y1 = basePartials[i0 + 1];
+    const t = partialIndex - i0;
+    
+    return y0 - (y0 - y1) * t; // Subtract because Y increases downward
+}
+
 let fps = 60;
 let now;
 let then = window.performance.now();
@@ -145,11 +304,10 @@ function draw() {
             }
         }
         currPartial = newPartial;
-        if (mouseHeld == true)
         console.log('currPartial:', currPartial);
         console.log('mouseY:', mouseY);
     }
-    if (mouseHeld == true) loadNoteImg();
+    if (mouseHeld == true || rightMouseHeld == true) loadNoteImg();
     osc.frequency.value = getPitch();
 }
 
@@ -264,13 +422,13 @@ function interpolateFromBasePartials(x) {
 
 function keydown(event) {
     document.getElementById('valve-' + event.key)?.style.setProperty('background-color', 'black');
-    if (event.key === keys[0] && !keysPressed[0]) {
+    if (event.key === keys.keys[0] && !keysPressed[0]) {
         keysPressed[0] = true;
     }
-    else if (event.key === keys[1] && !keysPressed[1]) {
+    else if (event.key === keys.keys[1] && !keysPressed[1]) {
         keysPressed[1] = true;
     }
-    else if (event.key === keys[2] && !keysPressed[2]) {
+    else if (event.key === keys.keys[2] && !keysPressed[2]) {
         keysPressed[2] = true;
     }
 
@@ -280,13 +438,13 @@ function keydown(event) {
 
 function keyup(event) {
     document.getElementById('valve-' + event.key)?.style.setProperty('background-color', 'white');
-    if (event.key === keys[0] && keysPressed[0]) {
+    if (event.key === keys.keys[0] && keysPressed[0]) {
         keysPressed[0] = false;
     }
-    else if (event.key === keys[1] && keysPressed[1]) {
+    else if (event.key === keys.keys[1] && keysPressed[1]) {
         keysPressed[1] = false;
     }
-    else if (event.key === keys[2] && keysPressed[2]) {
+    else if (event.key === keys.keys[2] && keysPressed[2]) {
         keysPressed[2] = false;
     }
 
@@ -295,12 +453,104 @@ function keyup(event) {
 }
 
 let mouseHeld = false;
+let rightMouseHeld = false;
+let filterDropInterval = null;
+
+function isFilterAttackActive() {
+    return filterDropInterval !== null;
+}
+
+// accent
+function attackFilter() {
+    // Immediately set filter to high value
+    window.filter.frequency.value = 4 * currFrequency;
+    
+    // Clear any existing drop interval
+    if (filterDropInterval) {
+        clearInterval(filterDropInterval);
+        filterDropInterval = null;
+    }
+    
+    // Gradually drop filter back to currFrequency over 0.5 seconds
+    const dropDuration = 250; // milliseconds
+    const dropSteps = 60; // frames per second
+    const stepTime = dropDuration / dropSteps;
+    const startValue = 2000;
+    const endValue = currFrequency;
+    const dropPerStep = (startValue - endValue) / dropSteps;
+    
+    let currentStep = 0;
+    filterDropInterval = setInterval(() => {
+        currentStep++;
+        const newValue = startValue - (dropPerStep * currentStep);
+        
+        if (newValue <= endValue || currentStep >= dropSteps) {
+            window.filter.frequency.value = endValue;
+            clearInterval(filterDropInterval);
+            filterDropInterval = null;
+        } else {
+            window.filter.frequency.value = newValue;
+        }
+        console.log('Filter frequency:', window.filter.frequency.value);
+    }, stepTime);
+}
+
+function cancelFilterDrop() {
+    if (filterDropInterval) {
+        clearInterval(filterDropInterval);
+        filterDropInterval = null;
+    }
+    window.filter.frequency.value = currFrequency;
+}
+
 function mousedown(event) {
-    mouseHeld = true;
     osc.start();
+    if (event.button === 0) { // Left click
+        mouseHeld = true;
+    } else if (event.button === 2) { // Right click
+        rightMouseHeld = true;
+        attackFilter();
+        
+    }
 }
 
 function mouseup(event) {
-    mouseHeld = false;
     osc.stop();
+    if (event.button === 0) { // Left click
+        mouseHeld = false;
+    } else if (event.button === 2) { // Right click
+        rightMouseHeld = false;
+        cancelFilterDrop();
+    }
 }
+
+function switchHands() {
+    if (keys.leftHand) {
+        keys.leftHand = false;
+        keys.keys = keysRight;
+    } else {
+        keys.leftHand = true;
+        keys.keys = keysLeft;
+    }
+
+    // Update valve labels and IDs
+    let valveDivs = document.querySelectorAll('.valve');
+    for (let i = 0; i < valveDivs.length; i++) {
+        valveDivs[i].textContent = keys.keys[i];
+        valveDivs[i].id = 'valve-' + keys.keys[i];
+    }
+    
+    // Flip horn image horizontally based on hand
+    let hornContainer = document.getElementById('horn-image-container');
+    if (keys.leftHand) {
+        hornContainer.style.transform = 'scaleX(-1)';
+    } else {
+        hornContainer.style.transform = 'scaleX(1)';
+    }
+    
+    changeIntervalFingerings();
+    loadHornImg();
+}
+
+// Make switchHands available globally for the HTML button
+window.switchHands = switchHands;
