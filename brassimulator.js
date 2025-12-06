@@ -10,7 +10,10 @@ let keys = {rightHand: true, keys: keysRight};
 let keysPressed = [false, false, false];
 let valvePitchDown = [1.12246, 1.05946, 1.18921]; // major second, minor second, minor third
 let numPartials = 8;
-let notes = ['Gb1', 'G2', 'Ab2', 'A2', 'Bb2', 'B2', 'C2', 'Gb2', 'G3', 'Ab3', 'A3', 'Bb3', 'B3', 'C3', 'Db3', 'D3', 'Eb3', 'E3', 'F3', 'Gb3', 'G4', 'Ab4', 'A4', 'Bb4', 'B4', 'C4', 'Db4', 'D4', 'Eb4', 'E4', 'F4', 'Gb4', 'G5', 'Ab5', 'A5', 'Bb5', 'B5', 'C5'];
+let notesFlats = ['Gb1', 'G2', 'Ab2', 'A2', 'Bb2', 'B2', 'C2', 'Gb2', 'G3', 'Ab3', 'A3', 'Bb3', 'B3', 'C3', 'Db3', 'D3', 'Eb3', 'E3', 'F3', 'Gb3', 'G4', 'Ab4', 'A4', 'Bb4', 'B4', 'C4', 'Db4', 'D4', 'Eb4', 'E4', 'F4', 'Gb4', 'G5', 'Ab5', 'A5', 'Bb5', 'B5', 'C5'];
+let notesSharps = ['F#1', 'G2', 'G#2', 'A2', 'A#2', 'B2', 'C2', 'F#2', 'G3', 'G#3', 'A3', 'A#3', 'B3', 'C3', 'C#3', 'D3', 'D#3', 'E3', 'F3', 'F#3', 'G4', 'G#4', 'A4', 'A#4', 'B4', 'C4', 'C#4', 'D4', 'D#4', 'E4', 'F4', 'F#4', 'G5', 'G#5', 'A5', 'A#5', 'B5', 'C5'];
+let notes = notesFlats;
+let useSharps = false;
 let heightPartials = [];
 let basePartials = [];
 let heightPartialNoteIdxs = [6, 13, 20, 25, 29, 32, 35, 37];
@@ -384,7 +387,9 @@ function loadNoteImg() {
     console.log('noteName:', noteName);
     
     img.className = 'note-image';
-    img.src = `./assets/notes/${noteName || 'C4'}.png`;
+    // Encode # as %23 for URL compatibility
+    const encodedNoteName = (noteName || 'C4').replace('#', '%23');
+    img.src = `./assets/notes/${encodedNoteName}.png`;
     
     // Only clear and add new image after it loads
     img.onload = function() {
@@ -661,6 +666,10 @@ window.addEventListener('message', function(event) {
             noteContainer.style.display = noteVisible ? 'block' : 'none';
         }
     }
+    else if (event.data.type === 'useSharpsChange') {
+        useSharps = event.data.value;
+        notes = useSharps ? notesSharps : notesFlats;
+    }
     else if (event.data.type === 'requestSettings') {
         // Send current settings to the iframe
         const iframe = document.querySelector('#settingsOverlay iframe');
@@ -670,7 +679,8 @@ window.addEventListener('message', function(event) {
                 ratio: ratio,
                 rightHand: keys.rightHand,
                 hornVisible: hornVisible,
-                noteVisible: noteVisible
+                noteVisible: noteVisible,
+                useSharps: useSharps
             }, '*');
         }
     }
