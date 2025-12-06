@@ -484,6 +484,7 @@ function cancelFilterDrop() {
 }
 
 function mousedown(event) {
+    if (mouseHeld || rightMouseHeld) return;
     osc.start();
     if (event.button === 0) { // Left click
         mouseHeld = true;
@@ -506,7 +507,7 @@ function mouseup(event) {
 
 function keydown(event) {
     // Prevent default behavior for Space and Alt keys
-    if (event.key === ' ' || event.key === 'Alt') {
+    if (event.key === ' ' || event.key === 'Alt' || event.altKey) {
         event.preventDefault();
     }
     
@@ -533,7 +534,7 @@ function keydown(event) {
 
 function keyup(event) {
     // Prevent default behavior for Space and Alt keys
-    if (event.key === ' ' || event.key === 'Alt') {
+    if (event.key === ' ' || event.key === 'Alt' || event.altKey) {
         event.preventDefault();
     }
     
