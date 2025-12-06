@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            margin: 0;
+        }
+        h1 {
+            color: #333;
+            margin-top: 0;
+        }
+        .setting-group {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .setting-group h3 {
+            margin-top: 0;
+            color: #555;
+        }
+        label {
+            display: block;
+            margin: 10px 0 5px 0;
+            font-weight: bold;
+        }
+        input[type="range"] {
+            width: 100%;
+        }
+        .setting-info {
+            font-size: 0.9em;
+            color: #666;
+            margin-top: 5px;
+        }
+        /* Toggle switch styles */
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+        }
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .slider {
+            background-color: #2196F3;
+        }
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+        .toggle-label {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Settings</h1>
+    
+    <div class="setting-group">
+        <h3>Control Dynamics</h3>
+        <div class="toggle-label">
+            <span style="font-weight: bold;">Allow moving the cursor left and right to change the dynamics.</span>
+            <label class="toggle-switch">
+                <input type="checkbox" id="dynamics-setting" checked>
+                <span class="slider"></span>
+            </label>
+        </div>
+    </div>
+    
+    <div class="setting-group">
+        <h3>Hand Preference</h3>
+        <div class="toggle-label">
+            <span style="font-weight: bold;">Use right hand (J, K, L instead of F, D, S) for the valves</span>
+            <label class="toggle-switch">
+                <input type="checkbox" id="hand-setting" checked>
+                <span class="slider"></span>
+            </label>
+        </div>
+    </div>
+
+    <div class="setting-group">
+        <h3>Accent Articulations</h3>
+        <div class="toggle-label">
+            <span style="font-weight: bold;">Allow the start of playing a note to sound accented.</span>
+            <label class="toggle-switch">
+                <input type="checkbox" id="accent-setting" checked>
+                <span class="slider"></span>
+            </label>
+        </div>
+    </div>
+
+    <div class="setting-group">
+        <h3>Horn Visibility</h3>
+        <div class="toggle-label">
+            <span style="font-weight: bold;">Show the horn image</span>
+            <label class="toggle-switch">
+                <input type="checkbox" id="horn-visible-setting" checked>
+                <span class="slider"></span>
+            </label>
+        </div>
+    </div>
+
+    <div class="setting-group">
+        <h3>Note Visibility</h3>
+        <div class="toggle-label">
+            <span style="font-weight: bold;">Show the note image</span>
+            <label class="toggle-switch">
+                <input type="checkbox" id="note-visible-setting" checked>
+                <span class="slider"></span>
+            </label>
+        </div>
+    </div>
+
+    <div class="setting-group">
+        <h3>Partial Spacing Ratio</h3>
+        <label for="ratio-setting">Ratio: <span id="ratio-value">1.3</span></label>
+        <input type="range" id="ratio-setting" min="0.8" max="1.5" step="0.1" value="1.3">
+        <p class="setting-info">Adjusts the relative size of each partial region. Higher values make lower partials larger.</p>
+    </div>
+
+    <script>
+        // Update ratio value display and communicate with parent
+        document.getElementById('ratio-setting').addEventListener('input', function(event) {
+            const value = parseFloat(event.target.value);
+            document.getElementById('ratio-value').textContent = value;
+            
+            // Send message to parent window
+            window.parent.postMessage({
+                type: 'ratioChange',
+                value: value
+            }, '*');
+        });
+
+        // Handle hand preference checkbox
+        document.getElementById('hand-setting').addEventListener('change', function(event) {
+            window.parent.postMessage({
+                type: 'handChange',
+                value: event.target.checked
+            }, '*');
+        });
+
+        // Handle dynamics preference checkbox
+        document.getElementById('dynamics-setting').addEventListener('change', function(event) {
+            window.parent.postMessage({
+                type: 'dynamicsChange',
+                value: event.target.checked
+            }, '*');
+        });
+
+        // Handle accent preference checkbox
+        document.getElementById('accent-setting').addEventListener('change', function(event) {
+            window.parent.postMessage({
+                type: 'accentChange',
+                value: event.target.checked
+            }, '*');
+        });
+
+        // Handle horn visibility checkbox
+        document.getElementById('horn-visible-setting').addEventListener('change', function(event) {
+            window.parent.postMessage({
+                type: 'hornVisibleChange',
+                value: event.target.checked
+            }, '*');
+        });
+
+        // Handle note visibility checkbox
+        document.getElementById('note-visible-setting').addEventListener('change', function(event) {
+            window.parent.postMessage({
+                type: 'noteVisibleChange',
+                value: event.target.checked
+            }, '*');
+        });
+
+        // Initialize checkbox state from parent
+        window.addEventListener('message', function(event) {
+            if (event.data.type === 'initSettings') {
+                document.getElementById('ratio-setting').value = event.data.ratio;
+                document.getElementById('ratio-value').textContent = event.data.ratio;
+                document.getElementById('hand-setting').checked = event.data.rightHand;
+                document.getElementById('horn-visible-setting').checked = event.data.hornVisible;
+                document.getElementById('note-visible-setting').checked = event.data.noteVisible;
+            }
+        });
+
+        // Request initial settings when iframe loads
+        window.parent.postMessage({ type: 'requestSettings' }, '*');
+    </script>
+</body>
+</html>

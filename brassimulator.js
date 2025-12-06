@@ -6,7 +6,7 @@ let mouseY;
 let prevMouseX = 0;
 let keysRight = ['j', 'k', 'l'];
 let keysLeft = ['f', 'd', 's'];
-let keys = {leftHand: false, keys: keysRight};
+let keys = {rightHand: true, keys: keysRight};
 let keysPressed = [false, false, false];
 let valvePitchDown = [1.12246, 1.05946, 1.18921]; // major second, minor second, minor third
 let numPartials = 8;
@@ -18,6 +18,11 @@ let currPartial = 0;
 let ratio = 1.3;
 let noteBoxRatio = 1; // Separate ratio for note box spacing
 let currFrequency = 500;
+let volumeOn = true;
+let accentOn = true;
+let hornVisible = true;
+let noteVisible = true;
+let defaultDynamics = {volume: 0, frequency: 500};
 
 window.addEventListener('keydown', keydown);
 window.addEventListener('keyup', keyup);
@@ -50,12 +55,13 @@ document.addEventListener('mousemove', function(event) {
 });
 
 function updateVolume() {
+    if (!volumeOn) return;
     if (isFilterAttackActive()) return;
     // Map mouseX to volume range
     const normalized = mouseX / window.innerWidth; // 0 at left, 1 at right
     
-    // Volume range: -20 dB at left edge, 0 dB at right edge
-    const volumeDb = -20 + (20 * normalized);
+    // Volume range: -25 dB at left edge, 0 dB at right edge
+    const volumeDb = -25 + (25 * normalized);
     window.volume.volume.value = volumeDb;
 
     currFrequency = 300 + (400 * normalized);
@@ -79,8 +85,8 @@ window.onload = function() {
         decay: 0.5,
         wet: 0.6
     }).toDestination();
-    window.filter = new Tone.Filter(currFrequency, "lowpass").connect(reverb);
-    window.volume = new Tone.Volume(0).connect(window.filter);
+    window.filter = new Tone.Filter(defaultDynamics.frequency, "lowpass").connect(reverb);
+    window.volume = new Tone.Volume(defaultDynamics.volume).connect(window.filter);
     osc = new Tone.Oscillator({
         type: "sawtooth",
         frequency: oscRoot
@@ -88,15 +94,6 @@ window.onload = function() {
 
     // Initialize heightPartials based on ratio
     updateHeightPartials();
-
-    // Add event listener for ratio slider
-    document.getElementById('ratio-slider').addEventListener('input', function(event) {
-        ratio = parseFloat(event.target.value);
-        noteBoxRatio = ratio; // Keep note box ratio in sync for now
-        updateHeightPartials();
-        createIntervalDivs();
-        // createNoteBoxes();
-    });
 
     console.log('heightPartials:', heightPartials);
     console.log('heightPartials[currPartial]:', heightPartials[currPartial]);
@@ -439,6 +436,7 @@ function isFilterAttackActive() {
 
 // accent
 function attackFilter() {
+    if (!accentOn) return;
     // Immediately set filter to high value
     window.filter.frequency.value = 4 * currFrequency;
     
@@ -556,17 +554,17 @@ function keyup(event) {
 }
 
 function switchHands() {
-    if (keys.leftHand) {
-        keys.leftHand = false;
-        keys.keys = keysRight;
-    } else {
-        keys.leftHand = true;
+    if (keys.rightHand) {
+        keys.rightHand = false;
         keys.keys = keysLeft;
+    } else {
+        keys.rightHand = true;
+        keys.keys = keysRight;
     }
 
     // Update valve labels and IDs
     let valveDivs = document.querySelectorAll('.valve');
-    if (!keys.leftHand) {
+    if (keys.rightHand) {
         for (let i = 0; i < valveDivs.length; i++) {
             valveDivs[i].textContent = keys.keys[i];
             valveDivs[i].id = 'valve-' + keys.keys[i];
@@ -582,10 +580,10 @@ function switchHands() {
     
     // Flip horn image horizontally based on hand
     let hornContainer = document.getElementById('horn-image-container');
-    if (keys.leftHand) {
-        hornContainer.style.transform = 'scaleX(-1)';
-    } else {
+    if (keys.rightHand) {
         hornContainer.style.transform = 'scaleX(1)';
+    } else {
+        hornContainer.style.transform = 'scaleX(-1)';
     }
     
     changeIntervalFingerings();
@@ -594,3 +592,86 @@ function switchHands() {
 
 // Make switchHands available globally for the HTML button
 window.switchHands = switchHands;
+
+
+// Instructions popup
+document.getElementById('openInstructionsBtn').addEventListener('click', function() {
+    document.getElementById('instructionsOverlay').style.display = 'flex';
+});
+
+document.getElementById('closeInstructionsBtn').addEventListener('click', function() {
+    document.getElementById('instructionsOverlay').style.display = 'none';
+});
+
+document.getElementById('instructionsOverlay').addEventListener('click', function(event) {
+    if (event.target === this) {
+        document.getElementById('instructionsOverlay').style.display = 'none';
+    }
+});
+
+// Settings popup
+document.getElementById('openSettingsBtn').addEventListener('click', function() {
+    document.getElementById('settingsOverlay').style.display = 'flex';
+});
+
+document.getElementById('closeSettingsBtn').addEventListener('click', function() {
+    document.getElementById('settingsOverlay').style.display = 'none';
+});
+
+document.getElementById('settingsOverlay').addEventListener('click', function(event) {
+    if (event.target === this) {
+        document.getElementById('settingsOverlay').style.display = 'none';
+    }
+});
+
+// Listen for messages from settings iframe
+window.addEventListener('message', function(event) {
+    if (event.data.type === 'ratioChange') {
+        ratio = event.data.value;
+        noteBoxRatio = ratio;
+        updateHeightPartials();
+        createIntervalDivs();
+    }
+    else if (event.data.type === 'handChange') {
+        if (event.data.value !== keys.rightHand) {
+            switchHands();
+        }
+    }
+    else if (event.data.type === 'dynamicsChange') {
+        volumeOn = event.data.value;
+        if (!volumeOn) {
+            window.volume.volume.value = defaultDynamics.volume;
+            osc.frequency.value = defaultDynamics.frequency;
+        }
+    }
+    else if (event.data.type === 'accentChange') {
+        accentOn = event.data.value;
+    }
+    else if (event.data.type === 'hornVisibleChange') {
+        hornVisible = event.data.value;
+        const hornContainer = document.getElementById('horn-image-container');
+        if (hornContainer) {
+            hornContainer.style.display = hornVisible ? 'block' : 'none';
+        }
+    }
+    else if (event.data.type === 'noteVisibleChange') {
+        noteVisible = event.data.value;
+        const noteContainer = document.getElementById('note-image-container');
+        if (noteContainer) {
+            noteContainer.style.display = noteVisible ? 'block' : 'none';
+        }
+    }
+    else if (event.data.type === 'requestSettings') {
+        // Send current settings to the iframe
+        const iframe = document.querySelector('#settingsOverlay iframe');
+        if (iframe && iframe.contentWindow) {
+            iframe.contentWindow.postMessage({
+                type: 'initSettings',
+                ratio: ratio,
+                rightHand: keys.rightHand,
+                hornVisible: hornVisible,
+                noteVisible: noteVisible
+            }, '*');
+        }
+    }
+});
