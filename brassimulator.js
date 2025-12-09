@@ -25,6 +25,11 @@ let volumeOn = true;
 let accentOn = true;
 let hornVisible = true;
 let noteVisible = true;
+let metronomeOn = false;
+let metronomeBPM = 120;
+let metronomePlayer = null;
+let metronomeInterval = null;
+let metronomeRestartTimeout = null;
 let defaultDynamics = {volume: 0, frequency: 500};
 
 window.addEventListener('keydown', keydown);
@@ -94,6 +99,14 @@ window.onload = function() {
         type: "sawtooth",
         frequency: oscRoot
     }).connect(window.volume);
+
+    // Initialize metronome player and wait for it to load
+    metronomePlayer = new Tone.Player({
+        url: "./assets/Click.mp3",
+        onload: () => {
+            console.log("Metronome click loaded");
+        }
+    }).toDestination();
 
     // Initialize heightPartials based on ratio
     updateHeightPartials();
@@ -483,6 +496,50 @@ function cancelFilterDrop() {
     window.filter.frequency.value = currFrequency;
 }
 
+function startMetronome() {
+    if (metronomeInterval) return; // Already running
+    if (!metronomePlayer.loaded) {
+        console.warn("Metronome click not loaded yet");
+        return;
+    }
+    
+    const intervalMs = (60 / metronomeBPM) * 1000;
+    
+    // Play immediately
+    metronomePlayer.start();
+    
+    // Set up interval for subsequent clicks
+    metronomeInterval = setInterval(() => {
+        metronomePlayer.start();
+    }, intervalMs);
+}
+
+function stopMetronome() {
+    if (metronomeInterval) {
+        clearInterval(metronomeInterval);
+        metronomeInterval = null;
+    }
+}
+
+function updateMetronomeBPM(bpm) {
+    metronomeBPM = bpm;
+    if (metronomeOn) {
+        // Stop the metronome immediately
+        stopMetronome();
+        
+        // Clear any pending restart
+        if (metronomeRestartTimeout) {
+            clearTimeout(metronomeRestartTimeout);
+        }
+        
+        // Wait 500ms before restarting with new BPM
+        metronomeRestartTimeout = setTimeout(() => {
+            startMetronome();
+            metronomeRestartTimeout = null;
+        }, 500);
+    }
+}
+
 function mousedown(event) {
     if (mouseHeld || rightMouseHeld) return;
     osc.start();
@@ -671,6 +728,17 @@ window.addEventListener('message', function(event) {
         useSharps = event.data.value;
         notes = useSharps ? notesSharps : notesFlats;
     }
+    else if (event.data.type === 'metronomeChange') {
+        metronomeOn = event.data.value;
+        if (metronomeOn) {
+            startMetronome();
+        } else {
+            stopMetronome();
+        }
+    }
+    else if (event.data.type === 'metronomeBPMChange') {
+        updateMetronomeBPM(event.data.value);
+    }
     else if (event.data.type === 'requestSettings') {
         // Send current settings to the iframe
         const iframe = document.querySelector('#settingsOverlay iframe');
@@ -681,7 +749,9 @@ window.addEventListener('message', function(event) {
                 rightHand: keys.rightHand,
                 hornVisible: hornVisible,
                 noteVisible: noteVisible,
-                useSharps: useSharps
+                useSharps: useSharps,
+                metronomeOn: metronomeOn,
+                metronomeBPM: metronomeBPM
             }, '*');
         }
     }
