@@ -30,6 +30,7 @@ let metronomeBPM = 120;
 let metronomePlayer = null;
 let metronomeInterval = null;
 let metronomeRestartTimeout = null;
+let valveShiftPartials = true;
 let defaultDynamics = {volume: 0, frequency: 500};
 
 window.addEventListener('keydown', keydown);
@@ -413,6 +414,13 @@ function loadNoteImg() {
 }
 
 function changeIntervalFingerings() {
+    if (!valveShiftPartials) {
+        // Reset to base partials if valve shifting is disabled
+        heightPartials = [...basePartials];
+        createIntervalDivs();
+        return;
+    }
+    
     let M = getValveMultiplier();
     let inv = 1 / M;
 
@@ -744,6 +752,10 @@ window.addEventListener('message', function(event) {
     else if (event.data.type === 'metronomeBPMChange') {
         updateMetronomeBPM(event.data.value);
     }
+    else if (event.data.type === 'valveShiftPartialsChange') {
+        valveShiftPartials = event.data.value;
+        changeIntervalFingerings();
+    }
     else if (event.data.type === 'requestSettings') {
         // Send current settings to the iframe
         const iframe = document.querySelector('#settingsOverlay iframe');
@@ -756,7 +768,8 @@ window.addEventListener('message', function(event) {
                 noteVisible: noteVisible,
                 useSharps: useSharps,
                 metronomeOn: metronomeOn,
-                metronomeBPM: metronomeBPM
+                metronomeBPM: metronomeBPM,
+                valveShiftPartials: valveShiftPartials
             }, '*');
         }
     }

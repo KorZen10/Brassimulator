@@ -155,6 +155,17 @@
     </div>
 
     <div class="setting-group">
+        <h3>Enable Valve Partial Shifting</h3>
+        <div class="toggle-label">
+            <span style="font-weight: bold;">Change partial heights when valves are pressed</span>
+            <label class="toggle-switch">
+                <input type="checkbox" id="valve-shift-partials-setting" checked>
+                <span class="slider"></span>
+            </label>
+        </div>
+    </div>
+
+    <div class="setting-group">
         <h3>Metronome</h3>
         <div class="toggle-label">
             <span style="font-weight: bold;">Enable metronome</span>
@@ -256,6 +267,14 @@
             }, '*');
         });
 
+        // Handle valve shift partials toggle
+        document.getElementById('valve-shift-partials-setting').addEventListener('change', function(event) {
+            window.parent.postMessage({
+                type: 'valveShiftPartialsChange',
+                value: event.target.checked
+            }, '*');
+        });
+
         // Initialize checkbox state from parent
         window.addEventListener('message', function(event) {
             if (event.data.type === 'initSettings') {
@@ -268,6 +287,7 @@
                 document.getElementById('metronome-setting').checked = event.data.metronomeOn;
                 document.getElementById('bpm-setting').value = event.data.metronomeBPM;
                 document.getElementById('bpm-value').textContent = event.data.metronomeBPM;
+                document.getElementById('valve-shift-partials-setting').checked = event.data.valveShiftPartials;
             }
         });
 
