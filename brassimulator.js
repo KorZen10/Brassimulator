@@ -125,10 +125,11 @@ function updateHeightPartials() {
     heightPartials = [];
     
     if (ratio === 1) {
-        partialInterval = window.innerHeight / numPartials;
+        let partialInterval = window.innerHeight / numPartials;
         for (let i = numPartials; i > 0; i--) {
             heightPartials.push(i * partialInterval);
         }
+        heightPartials.push(-1000);
     } else {
         const firstInterval = window.innerHeight * (1 - ratio) / (1 - Math.pow(ratio, numPartials));
         
@@ -583,6 +584,10 @@ function keydown(event) {
     }
     else if (event.key === 'Alt') {
         mousedown({button: 2});
+    }
+    else if (event.key === 'Escape') {
+        document.getElementById('instructionsOverlay').style.display = 'none';
+        document.getElementById('settingsOverlay').style.display = 'none';
     }
 
     changeIntervalFingerings();
