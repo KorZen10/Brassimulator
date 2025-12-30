@@ -404,7 +404,7 @@ function loadNoteImg() {
     img.className = 'note-image';
     // Encode # as %23 for URL compatibility
     const encodedNoteName = (noteName || 'C4').replace('#', '%23');
-    img.src = `./assets/notes/${encodedNoteName}.png`;
+    img.src = `./assets/notes_horn/${encodedNoteName}.png`;
     
     // Only clear and add new image after it loads
     img.onload = function() {
