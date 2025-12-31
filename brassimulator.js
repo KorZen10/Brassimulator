@@ -1,6 +1,6 @@
 import * as Tone from "https://cdn.skypack.dev/tone";
 let osc;
-let oscRoot = 87.3;
+let currOscRoot;
 let mouseX;
 let mouseY;
 let prevMouseX = 0;
@@ -10,9 +10,28 @@ let keys = {rightHand: true, keys: keysRight};
 let keysPressed = [false, false, false];
 let valvePitchDown = [1.12246, 1.05946, 1.18921]; // major second, minor second, minor third
 let numPartials = 8;
-let notesFlats = ['Gb1', 'G2', 'Ab2', 'A2', 'Bb2', 'B2', 'C2', 'Gb2', 'G3', 'Ab3', 'A3', 'Bb3', 'B3', 'C3', 'Db3', 'D3', 'Eb3', 'E3', 'F3', 'Gb3', 'G4', 'Ab4', 'A4', 'Bb4', 'B4', 'C4', 'Db4', 'D4', 'Eb4', 'E4', 'F4', 'Gb4', 'G5', 'Ab5', 'A5', 'Bb5', 'B5', 'C5'];
-let notesSharps = ['F#1', 'G2', 'G#2', 'A2', 'A#2', 'B2', 'C2', 'F#2', 'G3', 'G#3', 'A3', 'A#3', 'B3', 'C3', 'C#3', 'D3', 'D#3', 'E3', 'F3', 'F#3', 'G4', 'G#4', 'A4', 'A#4', 'B4', 'C4', 'C#4', 'D4', 'D#4', 'E4', 'F4', 'F#4', 'G5', 'G#5', 'A5', 'A#5', 'B5', 'C5'];
-let notes = notesFlats;
+let instrumentData = { 
+    horn: {
+        fundamental: 87.3,
+        flats: ['Gb1', 'G2', 'Ab2', 'A2', 'Bb2', 'B2', 'C2', 'Gb2', 'G3', 'Ab3', 'A3', 'Bb3', 'B3', 'C3', 'Db3', 'D3', 'Eb3', 'E3', 'F3', 'Gb3', 'G4', 'Ab4', 'A4', 'Bb4', 'B4', 'C4', 'Db4', 'D4', 'Eb4', 'E4', 'F4', 'Gb4', 'G5', 'Ab5', 'A5', 'Bb5', 'B5', 'C5'],
+        sharps: ['F#1', 'G2', 'G#2', 'A2', 'A#2', 'B2', 'C2', 'F#2', 'G3', 'G#3', 'A3', 'A#3', 'B3', 'C3', 'C#3', 'D3', 'D#3', 'E3', 'F3', 'F#3', 'G4', 'G#4', 'A4', 'A#4', 'B4', 'C4', 'C#4', 'D4', 'D#4', 'E4', 'F4', 'F#4', 'G5', 'G#5', 'A5', 'A#5', 'B5', 'C5']
+    },
+    // TODO make an image for Db3
+    trombone: {
+        fundamental: 58.3,
+        flats: ['E1', 'F1', 'Gb1', 'G1', 'Ab1', 'A1', 'Bb1', 'E2', 'F2', 'Gb2', 'G2', 'Ab2', 'A2', 'Bb2', 'B2', 'C3', 'Db3', 'D3', 'Eb3', 'E3', 'F3', 'Gb3', 'G3', 'Ab3', 'A3', 'Bb3', 'B3', 'C4', 'Db4', 'D4', 'Eb4', 'E4', 'F4', 'Gb4', 'G4', 'Ab4', 'A4', 'Bb4'],
+        sharps: ['E1', 'F1', 'F#1', 'G1', 'G#1', 'A1', 'A#1', 'E2', 'F2', 'F#2', 'G2', 'G#2', 'A2', 'A#2', 'B2', 'C3', 'C#3', 'D3', 'D#3', 'E3', 'F3', 'F#3', 'G3', 'G#3', 'A3', 'A#3', 'B3', 'C4', 'C#4', 'D4', 'D#4', 'E4', 'F4', 'F#4', 'G4', 'G#4', 'A4', 'A#4']
+    },
+    // TODO make an image for Bb3
+    trumpet: {
+        fundamental: 165,
+        flats: ['Gb2', 'G2', 'Ab2', 'A2', 'Bb2', 'B2', 'C2', 'Gb3', 'G3', 'Ab3', 'A3', 'Bb3', 'B3', 'C3', 'Db3', 'D4', 'Eb4', 'E4', 'F4', 'Gb4', 'G4', 'Ab4', 'A4', 'Bb4', 'B4', 'C4', 'Db4', 'D5', 'Eb5', 'E5', 'F5', 'Gb5', 'G5', 'Ab5', 'A5', 'Bb5', 'B5', 'C5'],
+        sharps: ['F#2', 'G2', 'G#2', 'A2', 'A#2', 'B2', 'C2', 'F#3', 'G3', 'G#3', 'A3', 'A#3', 'B3', 'C3', 'C#3', 'D4', 'D#4', 'E4', 'F4', 'F#4', 'G4', 'G#4', 'A4', 'A#4', 'B4', 'C4', 'C#4', 'D5', 'D#5', 'E5', 'F5', 'F#5', 'G5', 'G#5', 'A5', 'A#5', 'B5', 'C5']
+    }
+};
+let currInstrument = "horn";
+let notes = instrumentData.horn.flats;
+let isFlats = true; // TODO add logic to flip this value
 let useSharps = false;
 let heightPartials = [];
 let basePartials = [];
@@ -31,6 +50,7 @@ let metronomePlayer = null;
 let metronomeInterval = null;
 let metronomeRestartTimeout = null;
 let valveShiftPartials = true;
+let templateEnabled = true;
 let defaultDynamics = {volume: 0, frequency: 500};
 
 window.addEventListener('keydown', keydown);
@@ -56,9 +76,13 @@ document.addEventListener('mousemove', function(event) {
     mouseY = event.clientY; // Y-coordinate relative to the viewport
 
     if (mouseX !== prevMouseX) {
-        updateVolume();
+        if (currInstrument != "trombone") updateVolume();
+        else drawBoneSlide();
         prevMouseX = mouseX;
     }
+    // if (mouseY !== prevMouseY) {
+    //     prevMouseY = mouseY;
+    // }
 
     // console.log(`Mouse position: X = ${mouseX}, Y = ${mouseY}`);
 });
@@ -96,9 +120,10 @@ window.onload = function() {
     }).toDestination();
     window.filter = new Tone.Filter(defaultDynamics.frequency, "lowpass").connect(reverb);
     window.volume = new Tone.Volume(defaultDynamics.volume).connect(window.filter);
+    currOscRoot = getInstrData().fundamental;
     osc = new Tone.Oscillator({
         type: "sawtooth",
-        frequency: oscRoot
+        frequency: currOscRoot
     }).connect(window.volume);
 
     // Initialize metronome player and wait for it to load
@@ -145,7 +170,7 @@ function updateHeightPartials() {
 }
 
 function createIntervalDivs() {
-    const container = document.body;
+    const partialContainer = document.getElementById("partial-intervals");
 
     // Clear old intervals if window resizes or reloads
     document.querySelectorAll('.interval').forEach(x => x.remove());
@@ -181,7 +206,43 @@ function createIntervalDivs() {
         // Rainbow color based on partial index
         div.style.backgroundColor = rainbowColors[i] || "rgba(200,200,200,0.3)";
 
-        container.appendChild(div);
+        partialContainer.appendChild(div);
+    }
+
+    // do a special one for the trombone slide positions
+    const slidePosContainer = document.getElementById("slide-pos-intervals");
+
+    let createEl = function(width, xPos, color) {
+        const div = document.createElement('div');
+        div.className = 'interval';
+        div.style.position = "fixed";
+        div.style.left = xPos + "px";
+        div.style.top = "0px";
+        div.style.width = width + "px";
+        div.style.height = "100%";
+        div.style.zIndex = "-1";
+        div.style.pointerEvents = "none";
+        div.style.backgroundColor = color;
+        slidePosContainer.appendChild(div);
+    };
+
+    createEl(window.innerWidth / 12, 0, "rgba(0,0,0,0.1)")
+    createEl(window.innerWidth / 6, window.innerWidth / 12, "rgba(0,0,0,0)")
+    createEl(window.innerWidth / 6, 3 * window.innerWidth / 12, "rgba(0,0,0,0.1)")
+    createEl(window.innerWidth / 6, 5 * window.innerWidth / 12, "rgba(0,0,0,0)")
+    createEl(window.innerWidth / 6, 7 * window.innerWidth / 12, "rgba(0,0,0,0.1)")
+    createEl(window.innerWidth / 6, 9 * window.innerWidth / 12, "rgba(0,0,0,0)")
+    createEl(window.innerWidth / 12, 11 * window.innerWidth / 12, "rgba(0,0,0,0.1)")
+}
+
+function getInstrData() {
+    switch(currInstrument) {
+        case "horn":
+            return instrumentData.horn;
+        case "trombone":
+            return instrumentData.trombone;
+        case "trumpet":
+            return instrumentData.trumpet;
     }
 }
 
@@ -313,6 +374,7 @@ function rAF60fps() {
 
 function draw() {
     document.getElementById('pitch-line').style.setProperty('top', mouseY + 'px');
+    document.getElementById('trombone-slide-line').style.setProperty('left', mouseX + 'px');
     
     // Find which partial the mouse is in by checking heightPartials boundaries
     // console.log('heightPartials[currPartial]', heightPartials[currPartial]);
@@ -332,15 +394,22 @@ function draw() {
         console.log('mouseY:', mouseY);
     }
     if (mouseHeld == true || rightMouseHeld == true) loadNoteImg();
-    osc.frequency.value = getPitch();
+    if (currInstrument !== "trombone") {
+        let pitch = getPitch();
+        if (typeof pitch !== 'number' || !isFinite(pitch) || pitch <= 0) {
+            pitch = currOscRoot || 440;
+        }
+        osc.frequency.value = pitch;
+    }
 }
 
+// for every instrument but trombone
 function getPitch() {
     let harmonic = currPartial + 1;
     let valveMult = getValveMultiplier();
 
     let effectiveHarmonic = harmonic / valveMult;
-    return oscRoot * effectiveHarmonic;
+    return currOscRoot * effectiveHarmonic;
 }
 
 // used for the fingering images
@@ -364,6 +433,13 @@ function getValveSum() {
     return sum;
 }
 
+// TODO: untested
+function getSlidePitchChange() {
+    let mouseXnormalized = mouseX / window.innerWidth;
+    console.log("getSlidePitchChange:",Math.round(mouseXnormalized * 6));
+    return Math.round(mouseXnormalized * 6);
+}
+
 // used for the partials
 function getValveMultiplier() {
     let M = 1;
@@ -373,38 +449,90 @@ function getValveMultiplier() {
     return M;
 }
 
+function getSlideMultiplier() {
+    // Map mouseX to slide position n (0 to 6)
+    const numPositions = 7;
+    let n = (mouseX / window.innerWidth) * (numPositions - 1); // continuous value from 0 to 6
+    n = Math.max(0, Math.min(numPositions - 1, n));
+    // Each slide position is a half-step down: ratio = 2^(-n/12)
+    return Math.pow(2, -n / 12);
+}
+
+function changeInstrument(instrument) {
+    currInstrument = instrument;
+    loadHornImg();
+    let thisNotesArr = getInstrData();
+    currOscRoot = getInstrData();
+    notes = (isFlats) ? thisNotesArr.flats : thisNotesArr.sharps;
+
+    // extra logic to render the bone slide
+    if (instrument == "trombone") drawBoneSlide();
+    else {
+        // make the bone slide and line invisible
+        document.getElementById("bone-slide-container").setAttribute("hidden", "");
+        document.getElementById("trombone-slide-line").setAttribute("hidden", "");
+    }
+}
+
+function drawBoneSlide() {
+    //? using total width of window for cursor to decide slide position for now; this is subject to change
+    let slideEl = document.getElementById("bone-slide-container");
+    let mouseXnormalized = mouseX / window.innerWidth;
+    slideEl.style.left = `${mouseXnormalized * 270}px`;
+    slideEl.removeAttribute("hidden");
+    document.getElementById("trombone-slide-line").removeAttribute("hidden");
+    document.getElementById("slide-pos-intervals").removeAttribute("hidden");
+    // Simple linear mapping: 7 positions, equal spacing
+    // n = 0 (1st pos, far left), n = 6 (7th pos, far right)
+    const numPositions = 7;
+    // n = 0 (1st pos, far left), n = 6 (7th pos, far right)
+    let n = mouseX / window.innerWidth * (numPositions - 1); // continuous value from 0 to 6
+    n = Math.max(0, Math.min(numPositions - 1, n));
+    let L0 = getInstrData().fundamental;
+    let harmonic = currPartial + 1;
+    // Each slide position is exactly one half-step apart
+    let trombonePitch = (L0 * harmonic) * Math.pow(2, -n / 12);
+    currFrequency = trombonePitch;
+    osc.frequency.value = currFrequency;
+    changeIntervalFingerings();
+}
+
 function loadHornImg() {
     let valveId = getValveId();
-
+    console.log("currInstrument:",currInstrument);
+    
     let hornContainer = document.getElementById('horn-image-container');
     let img = document.createElement('img');
     img.className = 'horn-image';
-    img.src = `./assets/horn_${valveId || '000'}.png`;
+    img.src = `./assets/img_${currInstrument}/${currInstrument}_${(currInstrument == "trombone") ? "body" : (valveId || '000')}.png`;
+    // TODO add conditional to load the bone slide
     
     // Only clear and add new image after it loads
     img.onload = function() {
         hornContainer.innerHTML = '';
         hornContainer.appendChild(img);
+        // TODO clear the bone slide as well
     };
 }
 
 function loadNoteImg() {
-    let valveSum = getValveSum();
+    let numSemitonesDown;
+    numSemitonesDown = (currInstrument === "trombone") ? getSlidePitchChange() : getValveSum();
 
     let noteContainer = document.getElementById('note-image-container');
     let img = document.createElement('img');
 
-    console.log('heightPartialNoteIdxs[currPartial - valveSum]:', heightPartialNoteIdxs[currPartial - valveSum]);
+    console.log('heightPartialNoteIdxs[currPartial - valveSum]:', heightPartialNoteIdxs[currPartial - numSemitonesDown]);
 
     
-    let noteName = notes[heightPartialNoteIdxs[currPartial] - valveSum || 0];
+    let noteName = notes[heightPartialNoteIdxs[currPartial] - numSemitonesDown || 0];
 
     console.log('noteName:', noteName);
     
     img.className = 'note-image';
     // Encode # as %23 for URL compatibility
     const encodedNoteName = (noteName || 'C4').replace('#', '%23');
-    img.src = `./assets/notes_horn/${encodedNoteName}.png`;
+    img.src = `./assets/notes_${currInstrument}/${encodedNoteName}.png`;
     
     // Only clear and add new image after it loads
     img.onload = function() {
@@ -413,6 +541,7 @@ function loadNoteImg() {
     };
 }
 
+// function says "fingerings", but it accounts for trombone too
 function changeIntervalFingerings() {
     if (!valveShiftPartials) {
         // Reset to base partials if valve shifting is disabled
@@ -420,10 +549,12 @@ function changeIntervalFingerings() {
         createIntervalDivs();
         return;
     }
+    let M;
+    if (currInstrument === "trombone") M = getSlideMultiplier();
+    else M = getValveMultiplier();
+    let inv = (currInstrument === "trombone") ? M : 1 / M;
+    console.log("M:",M);
     
-    let M = getValveMultiplier();
-    let inv = 1 / M;
-
     // Recompute heightPartials using interpolation
     heightPartials = basePartials.map((baseY, i) => {
         let shiftedIndex = i * inv;
@@ -739,7 +870,7 @@ window.addEventListener('message', function(event) {
     }
     else if (event.data.type === 'useSharpsChange') {
         useSharps = event.data.value;
-        notes = useSharps ? notesSharps : notesFlats;
+        notes = useSharps ? currInstrument.sharps : currInstrument.flats;
     }
     else if (event.data.type === 'metronomeChange') {
         metronomeOn = event.data.value;
@@ -756,6 +887,9 @@ window.addEventListener('message', function(event) {
         valveShiftPartials = event.data.value;
         changeIntervalFingerings();
     }
+    else if (event.data.type === 'instrumentChange') {
+        changeInstrument(event.data.value);
+    }
     else if (event.data.type === 'requestSettings') {
         // Send current settings to the iframe
         const iframe = document.querySelector('#settingsOverlay iframe');
@@ -769,7 +903,8 @@ window.addEventListener('message', function(event) {
                 useSharps: useSharps,
                 metronomeOn: metronomeOn,
                 metronomeBPM: metronomeBPM,
-                valveShiftPartials: valveShiftPartials
+                valveShiftPartials: valveShiftPartials,
+                templateEnabled: templateEnabled,
             }, '*');
         }
     }

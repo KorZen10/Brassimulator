@@ -17,17 +17,25 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <div id="pitch-line"></div>
+    <div id="trombone-slide-line" hidden></div>
+    <div id="partial-intervals"></div>
+    <div id="slide-pos-intervals" hidden></div>
     <div id="app">
         <h1 class="no-focus" onfocus="this.blur()" tabindex="-1">Brassimulator</h1>
-        <div id="pitch-line"></div>
         <div id="content">
             <div id="valves"></div>
         </div>
-        <div id="horn-image-container" onfocus="this.blur()" tabindex="-1">
-            <img class="horn-image" src="./assets/horn_000.png">
+        <div id="instr-container">
+            <div id="horn-image-container" onfocus="this.blur()" tabindex="-1">
+                <img class="horn-image" src="./assets/img_horn/horn_000.png">
+            </div>
+            <div id="bone-slide-container" onfocus="this.blur()" tabindex="-1" hidden>
+                <img class="horn-image" src="./assets/img_trombone/trombone_slide.png">
+            </div>
         </div>
         <div id="note-image-container" onfocus="this.blur()" tabindex="-1">
-            <img class="note-image" src="./assets/notes/C4.png">
+            <img class="note-image" src="./assets/notes_horn/C4.png">
         </div>
         <div style="position: fixed; bottom: 20px; left: 20px; font-size: 30px;">
             <button id="openInstructionsBtn" onfocus="this.blur()" tabindex="-1" class="no-focus; sexy-button" style="font-size: 30px;">Instructions</button>

@@ -86,6 +86,19 @@
 </head>
 <body>
     <h1>Settings</h1>
+
+    <div class="setting-group">
+        <h3>Instrument</h3>
+        <div class="toggle-label">
+            <span style="font-weight: bold;">Select instrument</span>
+            <select id="instrument-switch">
+                <option value="horn">Horn</option>
+                <option value="trombone">Trombone</option>
+                <option value="trumpet">Trumpet</option>
+            </select>
+        </div>
+        <p class="setting-info">Switch which instrument you're using.</p>
+    </div>
     
     <div class="setting-group">
         <h3>Hand Preference</h3>
@@ -275,6 +288,14 @@
             }, '*');
         });
 
+        // Handle instrument selection
+        document.getElementById('instrument-switch').addEventListener('change', function(event) {
+            window.parent.postMessage({
+                type: 'instrumentChange',
+                value: event.target.value
+            }, '*');
+        });
+
         // Initialize checkbox state from parent
         window.addEventListener('message', function(event) {
             if (event.data.type === 'initSettings') {
@@ -288,6 +309,7 @@
                 document.getElementById('bpm-setting').value = event.data.metronomeBPM;
                 document.getElementById('bpm-value').textContent = event.data.metronomeBPM;
                 document.getElementById('valve-shift-partials-setting').checked = event.data.valveShiftPartials;
+                document.getElementById('instrument-switch').value = event.data.currentInstrument;
             }
         });
 
