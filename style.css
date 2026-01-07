@@ -74,7 +74,7 @@ html {
 }
 #horn-image-container {
     position: absolute;
-    top: 50px;
+    top: 0;
     left: 0;
     pointer-events: none;
     -webkit-user-select: none;
@@ -84,7 +84,7 @@ html {
 }
 #bone-slide-container {
     position: absolute;
-    top: 50px;
+    top: 0;
     left: 0;
     pointer-events: none;
     -webkit-user-select: none;

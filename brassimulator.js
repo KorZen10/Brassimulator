@@ -13,18 +13,21 @@ let numPartials = 8;
 let instrumentData = { 
     horn: {
         fundamental: 87.3,
+        timbre: 500,
         flats: ['Gb1', 'G2', 'Ab2', 'A2', 'Bb2', 'B2', 'C2', 'Gb2', 'G3', 'Ab3', 'A3', 'Bb3', 'B3', 'C3', 'Db3', 'D3', 'Eb3', 'E3', 'F3', 'Gb3', 'G4', 'Ab4', 'A4', 'Bb4', 'B4', 'C4', 'Db4', 'D4', 'Eb4', 'E4', 'F4', 'Gb4', 'G5', 'Ab5', 'A5', 'Bb5', 'B5', 'C5'],
         sharps: ['F#1', 'G2', 'G#2', 'A2', 'A#2', 'B2', 'C2', 'F#2', 'G3', 'G#3', 'A3', 'A#3', 'B3', 'C3', 'C#3', 'D3', 'D#3', 'E3', 'F3', 'F#3', 'G4', 'G#4', 'A4', 'A#4', 'B4', 'C4', 'C#4', 'D4', 'D#4', 'E4', 'F4', 'F#4', 'G5', 'G#5', 'A5', 'A#5', 'B5', 'C5']
     },
     // TODO make an image for Db3
     trombone: {
         fundamental: 58.3,
+        timbre: 700,
         flats: ['E1', 'F1', 'Gb1', 'G1', 'Ab1', 'A1', 'Bb1', 'E2', 'F2', 'Gb2', 'G2', 'Ab2', 'A2', 'Bb2', 'B2', 'C3', 'Db3', 'D3', 'Eb3', 'E3', 'F3', 'Gb3', 'G3', 'Ab3', 'A3', 'Bb3', 'B3', 'C4', 'Db4', 'D4', 'Eb4', 'E4', 'F4', 'Gb4', 'G4', 'Ab4', 'A4', 'Bb4'],
         sharps: ['E1', 'F1', 'F#1', 'G1', 'G#1', 'A1', 'A#1', 'E2', 'F2', 'F#2', 'G2', 'G#2', 'A2', 'A#2', 'B2', 'C3', 'C#3', 'D3', 'D#3', 'E3', 'F3', 'F#3', 'G3', 'G#3', 'A3', 'A#3', 'B3', 'C4', 'C#4', 'D4', 'D#4', 'E4', 'F4', 'F#4', 'G4', 'G#4', 'A4', 'A#4']
     },
     // TODO make an image for Bb3
     trumpet: {
-        fundamental: 165,
+        fundamental: 116.5,
+        timbre: 1000,
         flats: ['Gb2', 'G2', 'Ab2', 'A2', 'Bb2', 'B2', 'C2', 'Gb3', 'G3', 'Ab3', 'A3', 'Bb3', 'B3', 'C3', 'Db3', 'D4', 'Eb4', 'E4', 'F4', 'Gb4', 'G4', 'Ab4', 'A4', 'Bb4', 'B4', 'C4', 'Db4', 'D5', 'Eb5', 'E5', 'F5', 'Gb5', 'G5', 'Ab5', 'A5', 'Bb5', 'B5', 'C5'],
         sharps: ['F#2', 'G2', 'G#2', 'A2', 'A#2', 'B2', 'C2', 'F#3', 'G3', 'G#3', 'A3', 'A#3', 'B3', 'C3', 'C#3', 'D4', 'D#4', 'E4', 'F4', 'F#4', 'G4', 'G#4', 'A4', 'A#4', 'B4', 'C4', 'C#4', 'D5', 'D#5', 'E5', 'F5', 'F#5', 'G5', 'G#5', 'A5', 'A#5', 'B5', 'C5']
     }
@@ -97,7 +100,8 @@ function updateVolume() {
     const volumeDb = -25 + (25 * normalized);
     window.volume.volume.value = volumeDb;
 
-    currFrequency = 300 + (400 * normalized);
+    let freqMultiplier = getInstrData().timbre * 3 / 5;
+    currFrequency = freqMultiplier + (getInstrData().timbre - (freqMultiplier / 2) * normalized);
     window.filter.frequency.value = currFrequency;
 }
 
@@ -461,27 +465,32 @@ function getSlideMultiplier() {
 function changeInstrument(instrument) {
     currInstrument = instrument;
     loadHornImg();
-    let thisNotesArr = getInstrData();
-    currOscRoot = getInstrData();
-    notes = (isFlats) ? thisNotesArr.flats : thisNotesArr.sharps;
+    let thisInstrData = getInstrData();
+    currOscRoot = thisInstrData.fundamental;
+    console.log("currOscRoot:",currOscRoot)
+    notes = (isFlats) ? thisInstrData.flats : thisInstrData.sharps;
+    thisInstrData.timbre;
 
     // extra logic to render the bone slide
-    if (instrument == "trombone") drawBoneSlide();
+    if (instrument == "trombone") {
+        document.getElementById("trombone-slide-line").removeAttribute("hidden");
+        document.getElementById("slide-pos-intervals").removeAttribute("hidden");
+        document.getElementById("bone-slide-container").removeAttribute("hidden");
+        window.volume.volume.value = -5;
+        drawBoneSlide();
+    }
     else {
-        // make the bone slide and line invisible
+        // make the bone slide, line, and slide positions invisible
         document.getElementById("bone-slide-container").setAttribute("hidden", "");
         document.getElementById("trombone-slide-line").setAttribute("hidden", "");
+        document.getElementById("slide-pos-intervals").setAttribute("hidden", "");
     }
 }
 
 function drawBoneSlide() {
     //? using total width of window for cursor to decide slide position for now; this is subject to change
-    let slideEl = document.getElementById("bone-slide-container");
     let mouseXnormalized = mouseX / window.innerWidth;
-    slideEl.style.left = `${mouseXnormalized * 270}px`;
-    slideEl.removeAttribute("hidden");
-    document.getElementById("trombone-slide-line").removeAttribute("hidden");
-    document.getElementById("slide-pos-intervals").removeAttribute("hidden");
+    document.getElementById("bone-slide-container").style.left = `${mouseXnormalized * 270}px`;
     // Simple linear mapping: 7 positions, equal spacing
     // n = 0 (1st pos, far left), n = 6 (7th pos, far right)
     const numPositions = 7;
@@ -505,7 +514,6 @@ function loadHornImg() {
     let img = document.createElement('img');
     img.className = 'horn-image';
     img.src = `./assets/img_${currInstrument}/${currInstrument}_${(currInstrument == "trombone") ? "body" : (valveId || '000')}.png`;
-    // TODO add conditional to load the bone slide
     
     // Only clear and add new image after it loads
     img.onload = function() {
@@ -513,6 +521,13 @@ function loadHornImg() {
         hornContainer.appendChild(img);
         // TODO clear the bone slide as well
     };
+
+    // flip horn horizontally based on which is selected (if it's currently trombone, set it to face right every time)
+    if (keys.rightHand || currInstrument === "trombone") {
+        hornContainer.style.transform = 'scaleX(1)';
+    } else {
+        hornContainer.style.transform = 'scaleX(-1)';
+    }
 }
 
 function loadNoteImg() {
@@ -783,14 +798,6 @@ function switchHands() {
             valveDivs[i].textContent = keys.keys[keyIndex];
             valveDivs[i].id = 'valve-' + keys.keys[keyIndex];
         }
-    }
-    
-    // Flip horn image horizontally based on hand
-    let hornContainer = document.getElementById('horn-image-container');
-    if (keys.rightHand) {
-        hornContainer.style.transform = 'scaleX(1)';
-    } else {
-        hornContainer.style.transform = 'scaleX(-1)';
     }
     
     changeIntervalFingerings();
